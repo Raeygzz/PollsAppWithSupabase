@@ -40,6 +40,11 @@ export default function HomeScreen() {
               <AntDesign name="plus" size={20} color={"gray"} />
             </Link>
           ),
+          headerLeft: () => (
+            <Link href={"/profile"}>
+              <AntDesign name="user" size={20} color={"gray"} />
+            </Link>
+          ),
         }}
       />
 
