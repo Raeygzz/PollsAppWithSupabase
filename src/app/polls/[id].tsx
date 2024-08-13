@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import {
   View,
   Text,
@@ -11,13 +11,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-import { Poll } from "@/src/types/db";
+import { Poll, Vote } from "@/src/types/db";
 import { supabase } from "@/src/lib/Supabase";
+import { useAuth } from "@/src/providers/AuthProvider";
 
 const PollDetails = () => {
   const [poll, setPoll] = useState<Poll>();
   const [selected, setSelected] = useState("");
+  const [userVote, setUserVote] = useState<Vote>();
 
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   useEffect(() => {
@@ -37,10 +40,51 @@ const PollDetails = () => {
       }
     };
 
+    const fetchUserVote = async () => {
+      let { data, error } = await supabase
+        .from("votes")
+        .select("*")
+        .eq("poll_id", Number(id))
+        .eq("user_id", user?.id!)
+        .limit(1)
+        .single();
+
+      if (data) {
+        setUserVote(data);
+        setSelected(data.option);
+      }
+    };
+
     fetchPolls();
+    fetchUserVote();
   }, []);
 
-  const vote = () => {};
+  const vote = async () => {
+    const newVote = {
+      option: selected,
+      poll_id: Number(id),
+      user_id: user?.id ?? "",
+    } as Vote;
+
+    if (userVote) {
+      newVote.id = userVote.id;
+    }
+
+    const { data, error } = await supabase
+      .from("votes")
+      .upsert([newVote])
+      .select()
+      .single();
+
+    if (error) {
+      Alert.alert("Failed to vote");
+    } else {
+      setUserVote(data);
+      Alert.alert("Thank you for yoour vote");
+    }
+
+    router.back();
+  };
 
   if (!poll) {
     return <ActivityIndicator />;
