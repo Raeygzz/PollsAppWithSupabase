@@ -3,28 +3,21 @@ import { Link, Stack } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
 import { Text, StyleSheet, FlatList, Alert } from "react-native";
 
+import { Poll } from "../types/db";
 import { supabase } from "../lib/Supabase";
 
-type PollsRes = {
-  created_at: string;
-  id: number;
-  options: string[];
-  question: string;
-};
-
 export default function HomeScreen() {
-  const [polls, setPolls] = useState<PollsRes[]>([]);
+  const [polls, setPolls] = useState<Poll[]>([]);
 
   useEffect(() => {
     const fetchPolls = async () => {
       let { data, error } = await supabase.from("polls").select("*");
-      console.log("🚀 ~ fetchPolls ~ data:", data);
 
       if (error) {
         Alert.alert("Error fetching data...");
       }
 
-      setPolls(data as PollsRes[]);
+      setPolls(data ?? []);
     };
 
     fetchPolls();
